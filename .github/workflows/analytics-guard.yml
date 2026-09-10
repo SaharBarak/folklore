@@ -1,0 +1,27 @@
+name: Analytics guard
+
+# Each venture now reports into its own GA4 property. A branch cut before that
+# split still carries the retired shared measurement ID, and merging it puts the
+# old ID back silently — the site keeps building and the data just stops
+# arriving. Fail the build instead.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  measurement-id:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Reject retired GA4 measurement IDs
+        run: |
+          RETIRED='G-(KY20RW9LY7|YNR9V7CGP2|FPXS9HK4QS|3152BQ20BJ|95HGMDBT28|DCLXVLE1JF)'
+          if git grep -nE "$RETIRED" -- ':!*.md' ':!docs/**' ':!.planning/**'; then
+            echo "::error::Retired GA4 measurement ID found above. Every venture has its own property now; use the current ID for this site."
+            exit 1
+          fi
+          echo "No retired GA4 measurement IDs present."
